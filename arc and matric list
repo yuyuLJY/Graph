@@ -1,0 +1,693 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define MaxVertexNum 20 //顶点数设置为100
+#define INFINITY 100000
+#define maxSize 100
+typedef enum{false = 0,true = 1}PointTag;
+int visited[MaxVertexNum];
+typedef int weightType;
+typedef char dataType;
+//邻接矩阵的结构体
+/*邻接矩阵*/
+struct GNode{
+    int nv;//顶点数
+    int ne;//边数
+    weightType G[MaxVertexNum][MaxVertexNum];//邻接矩阵某条边的权值
+    dataType data[MaxVertexNum];//存顶点的数据
+};
+typedef struct GNode *MGraph;
+
+/*邻接矩阵边的定义*/
+typedef int Vertex;
+struct ENode{
+    Vertex v1,v2;
+    weightType weight;
+};
+typedef struct ENode *Edge;
+
+//邻接表的结构体
+/*邻接点的定义*/
+struct AdjvNode{
+    Vertex Adjv;//邻接点的下标
+    weightType weight;
+    struct AdjvNode *next;
+};
+typedef struct AdjvNode *PtrToAdjvNode;
+
+
+/*顶点表头结点的定义*/
+struct Vnode{
+    PtrToAdjvNode firstEdge;//边表头指针
+    dataType data;
+};
+//开辟顶点结点的数组
+typedef struct Vnode AdjList[MaxVertexNum];
+
+
+/*邻接表-图的定义*/
+struct GNode_AL{
+    int nv;
+    int ne;
+    AdjList G;//邻接表
+};
+typedef struct GNode_AL *LGraph;
+
+typedef Vertex element1;//队列的元素是“边”
+typedef int position;
+struct QNode{
+    element1 data1[maxSize];//存储元素的数组,数组里边放的全部都是指针
+    position front,rear;//队列的头尾指针
+};
+typedef struct QNode *queue;//没有*不行？？？
+
+/*十字链表的结构体*/
+//结点结构
+struct ArcNode{
+    int tailvex,headvex;//弧的头和顶点的位置
+    struct ArcNode *hlink,*tlink;//头尾指针
+    weightType weight;//邻接点下标？？
+};
+typedef struct ArcNode *Arcbox;
+
+//头结点
+struct XNode{
+    dataType data;
+    Arcbox firstIn,firstOut;
+};
+typedef struct XNode xlist[MaxVertexNum];
+
+/*十字链表-图的定义*/
+struct OLGNode{
+    int nv;
+    int ne;
+    xlist G;//邻接表
+};
+typedef struct OLGNode *OLGraph;
+
+Vertex accessVisit();//想要去开始进入的点
+void InitialVisted();//初始化访问tag
+MGraph biuldGraph_matric();
+MGraph CreateGraph_matric(int nvNum);//初始化有nv个顶点但没有边的图
+void InsertEdge_matric(MGraph Graph,Edge E);//在矩阵中插入边
+
+queue CreatQueue();//创建空队列
+int Isfull(queue Q);//列队是不是满的
+void addQ(queue Q,element1 x);//添加新队列
+int isEmpty(queue Q);//判断队列是否为空
+element1 deleteQ(queue Q);//删除队列中的元素,返回弹出的地址
+void visit_(Vertex s);
+int IsEdge(MGraph Graph,Vertex v,Vertex w);//判断是不是边
+void InitialVisted();//初始化访问tag
+LGraph biuldGraph_adjacencyList();//建立邻接表的图
+LGraph CreateGraph_adjacencyList(int nvNum);//初始化有nv个顶点但没有边的图
+void InsertEdge_adjacencyList(LGraph Graph,Edge E);//把这条边插入邻接表信息中
+OLGraph biuldGraph_arc();//建立十字链表的图
+OLGraph CreateGraph_arc(int nvNum);
+void InsertEdge_arc(OLGraph Graph,Edge E);//把这条边插入十字链表信息中
+
+void BFS_matric(MGraph Graph,Vertex s,void(*visit_)(Vertex));//邻接矩阵的广度优先搜索
+void DFS_matric(MGraph Graph,Vertex v,void(*visit_)(Vertex));//邻接矩阵的深度递归搜索
+void In_DFS_matric(MGraph Graph,Vertex v,void(*visit_)(Vertex));//邻接矩阵的深度递归搜索
+
+void DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex));//邻接表的深度搜索
+void In_DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex));//邻接表的深度搜索
+void BFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex));//邻接表的广度搜索
+
+void BFS_arc(OLGraph Graph,Vertex s,void(*visit_)(Vertex));//十字链表的广度优先搜索
+void DFS_arc(OLGraph Graph,Vertex v,void(*visit_)(Vertex));//十字链表的深度递归搜索
+void In_DFS_arc(OLGraph Graph,Vertex v,void(*visit_)(Vertex));//十字链表的深度递归搜索
+
+int FirstAdjVex(OLGraph Graph,int v);
+int NextAdjVex(OLGraph Graph,int v,int w);
+int main()
+{
+    /*MGraph Graph;
+    Vertex s=accessVisit();//开始访问的结点
+    InitialVisted();//初始化访问tag
+    Graph=biuldGraph_matric();
+    printf("邻接矩阵的广度优先搜索：\n");
+    BFS_matric(Graph,s,visit_);
+    printf("\n");
+
+    InitialVisted();//初始化访问tag
+    printf("邻接矩阵的深度递归优先搜索：\n");
+    DFS_matric(Graph,s,visit_); //邻接矩阵的深度递归搜索
+    printf("\n");
+
+    InitialVisted();//初始化访问tag
+    printf("邻接矩阵的深度非递归优先搜索：\n");
+    In_DFS_matric(Graph,s,visit_); //邻接矩阵的深度非递归搜索
+    printf("\n");
+    //printf("%d\n",Graph->G[4][3]);
+    //printf("%d\n",Graph->nv);测试，已经成功读入
+    //printf("%c\n",Graph->data[2]);*/
+
+    /*LGraph Graph;
+    Vertex s=accessVisit();//开始访问的结点
+
+    InitialVisted();//初始化访问tag
+    Graph=biuldGraph_adjacencyList();
+    printf("邻接表的深度优先搜索：\n");
+    DFS_adjacencyList(Graph,s,visit_); //邻接表的深度搜索
+    printf("\n");
+
+    InitialVisted();//初始化访问tag
+    printf("邻接表的深度优先非搜索：\n");
+    In_DFS_adjacencyList(Graph,s,visit_); //邻接表的深度搜索
+    printf("\n");
+
+    printf("邻接表的广度优先搜索：\n");
+    InitialVisted();//初始化访问tag
+    BFS_adjacencyList(Graph,s,visit_); //邻接表的深度搜索
+    //读入验证正确
+    //printf("%d\n",(Graph->G[4].firstEdge)->Adjv);
+    //printf("%c\n",Graph->G[4].data);*/
+
+
+    OLGraph Graph;
+    Vertex s=accessVisit();//开始访问的结点
+
+    InitialVisted();//初始化访问tag
+    Graph=biuldGraph_arc();
+    //printf("%d\n",(Graph->G[4].firstOut)->headvex);
+    //printf("%d\n",(Graph->G[3].firstOut)->headvex);
+    //printf("%c\n",Graph->G[4].data);
+   // printf("%d\n",Graph->ne);
+    printf("十字链表的深度优先递归搜索：\n");
+    DFS_arc(Graph,s,visit_); //邻接表的深度搜索
+    printf("\n");
+
+    InitialVisted();//初始化访问tag
+    printf("十字链表的深度优先非递归搜索：\n");
+    //有些问题
+    In_DFS_arc(Graph,s,visit_); //邻接表的深度搜索
+    printf("\n");
+
+    printf("十字链表的广度优先搜索：\n");
+    InitialVisted();//初始化访问tag
+    BFS_arc(Graph,s,visit_); //邻接表的深度搜索
+
+    return 0;
+}
+
+//想要去开始进入的点
+Vertex accessVisit(){
+    Vertex s =0;
+    return s;
+}
+
+MGraph biuldGraph_matric(){
+    MGraph Graph;
+    Edge E;
+    int nv,i;
+    //读入顶点个数
+    FILE*fp;
+     if((fp=fopen("E://数据结构//图 实验//matric.txt","r"))==NULL)
+    {
+        printf("fail to open!");
+        exit(0);
+    }
+    fscanf(fp,"%d\n",&nv);//顶点个数
+    Graph=CreateGraph_matric(nv);//初始化有nv个顶点但没有边的图
+
+    fscanf(fp,"%d\n",&Graph->ne);//读入边数
+    if(Graph->ne!=0){
+        E=(Edge)malloc(sizeof(struct ENode));
+        for(i=0;i<Graph->ne;i++){
+            fscanf(fp,"%d %d %d\n",&E->v1,&E->v2,&E->weight);//读入边的信息
+            InsertEdge_matric(Graph,E);//把这条边插入矩阵信息中
+        }
+    }
+    //读入顶点的数据
+    for(i=0;i<Graph->nv;i++){
+        fscanf(fp,"%c",&Graph->data[i]);//读入A、B、C顶点的数据
+    }
+    return Graph;
+}
+/*
+//读取文件信息,后面才做
+void readText(){
+}*/
+
+//初始化有nv个顶点但没有边的图
+MGraph CreateGraph_matric(int nvNum){
+    Vertex v,w;
+    MGraph Graph;
+    //为这个图申请空间
+    Graph =(MGraph)malloc(sizeof(struct GNode));
+    Graph->nv=nvNum;
+    //边数设置为0，并且将各条边的间距设置成无穷大，表示不连接
+    Graph->ne=0;
+    for(v=0;v<Graph->nv;v++){
+        for(w=0;w<Graph->nv;w++){
+            Graph->G[v][w]=INFINITY;
+        }
+
+    }
+    return Graph;
+}
+
+//在矩阵中插入边
+void InsertEdge_matric(MGraph Graph,Edge E){
+    Graph->G[E->v1][E->v2]=E->weight;
+}
+
+//初始化访问tag
+void InitialVisted(){
+    int i;
+    for(i=0;i<MaxVertexNum;i++){
+        visited[i]=0;
+    }
+}
+
+//邻接矩阵的广度优先搜索
+void BFS_matric(MGraph Graph,Vertex s,void(*visit_)(Vertex)){
+    queue Q;
+    Vertex v,w;
+
+    Q=CreatQueue();//创建空的队列
+
+    visit_(s);//访问s顶点,并打印
+    visited[s]=true;
+    addQ(Q,s);//将s加入队列
+
+    while(!isEmpty(Q)){
+        v=deleteQ(Q);//把v弹出
+        for(w=0;w<Graph->nv;w++){
+                //判断是不是边
+            if(!visited[w]&&IsEdge(Graph,v,w)){
+                visit_(w);
+                visited[w]=true;
+                addQ(Q,w);//w入队
+            }
+        }
+    }
+}
+
+
+//邻接表的广度搜索
+void BFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    PtrToAdjvNode w;
+    queue Q;
+    Q=CreatQueue();//创建空的队列
+    //开始的时候队列为空，或者访问结点是要访问的第一个结点
+   /* while(!isEmpty(Q) || flag==0){
+        //指向的就是顶点表的下一个元素，所以不用w=Graph->G[v].firstEdge->next;
+        w=Graph->G[v].firstEdge;
+        while(w){
+        //如果没有被访问
+            if(!visited[w->Adjv]){
+            addQ(Q,w->Adjv);
+            visit_(w->Adjv);
+            visited[w->Adjv]=true;//标记已经访问了
+            }
+            w=w->next;
+        }
+        v=deleteQ(Q);//有问题，应该先弹出再放进去，再判断
+        flag=1;
+    }*/
+
+        w=Graph->G[v].firstEdge;//2
+        addQ(Q,w->Adjv);
+    //2
+    //printf("放进去的元素%d\n",w->Adjv);
+    while(!isEmpty(Q)){
+        v=deleteQ(Q);//有问题，应该先弹出再放进去，再判断
+        //printf("出来的元素%d\n",v);
+        visit_(v);
+        //指向的就是顶点表的下一个元素，所以不用w=Graph->G[v].firstEdge->next;
+        visited[v]=true;//标记已经访问了
+        while(w->next){
+            w=w->next;
+            if(!visited[w->Adjv])
+                 addQ(Q,w->Adjv);
+
+        }
+        w=Graph->G[w->Adjv].firstEdge;
+        //放进去是有条件的
+        if(!visited[w->Adjv])
+            addQ(Q,w->Adjv);
+    }
+}
+
+//十字链表的广度搜索
+void BFS_arc(OLGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int w;
+    queue Q;
+    Q=CreatQueue();//创建空的队列
+    if(!visited[v]){
+        visit_(v);//去访问
+        visited[v]=true;//标记成已经访问
+        addQ(Q,v);//放入列队中
+    }
+    while(!isEmpty(Q)){
+        v=deleteQ(Q);
+        //两种方法都可以
+      /*  for(w=Graph->G[v].firstOut;w;w->tlink){
+            if(!visited[w->headvex]){
+                visited[w->headvex]=true;
+                visit_(w->headvex);
+                addQ(Q,w->headvex);
+            }
+        }*/
+        /*在这里发现了一个前面程序的问题，前面for语句初始化的时候，没有使用{}，导致只初始化了一个指针
+        ，经过检查发现for无法跳出循环，用下面的一个打印语句发现，for居然还在调用一个本来应该是NULL的空间的值*/
+        for(w=FirstAdjVex(Graph,v);w>=0;w=NextAdjVex(Graph,v,w)){
+            if(!visited[w]){
+                visited[w]=true;
+                visit_(w);
+                addQ(Q,w);
+
+            }
+        }
+    }
+
+}
+
+int FirstAdjVex(OLGraph Graph,int v){
+   int w;
+   if(Graph->G[v].firstOut){
+        w=Graph->G[v].firstOut->headvex;
+        return w;
+   }
+   return -1;
+}
+
+int NextAdjVex(OLGraph Graph,int v,int w){
+    Arcbox p;
+    p=Graph->G[v].firstOut;
+    while(p->headvex!=w){
+        p=p->tlink;
+    }
+    if(p->tlink)
+    {
+    //printf("执行返回\n");//3的后面不是NULL，但是应该是NULL
+     //!!在这里发现问题
+     return p->tlink->headvex;
+    }
+    else{
+        //printf("执行return-1");
+        return -1;
+    }
+}
+
+//邻接表的深度搜索递归
+void DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    PtrToAdjvNode w;
+    visit_(v);
+    visited[v]=true;
+
+    for(w=Graph->G[v].firstEdge;w;w=w->next){
+        if(!visited[w->Adjv])//下一个顶点没有被访问
+            DFS_adjacencyList(Graph,w->Adjv,visit_);
+    }
+}
+
+//邻接表的深度搜索非递归
+void In_DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int count=0;
+    PtrToAdjvNode w;
+    visit_(v);
+    visited[v]=true;
+    count++;
+    /*用一个count计次，一直到count==nv的时候停止，~有连出去的边*/
+    while(count!=Graph->nv){
+        w=Graph->G[v].firstEdge;//2
+        if(w){
+            //如果前面有已经访问过的一直滑过
+            while(visited[w->Adjv])
+                w=w->next;
+            visit_(w->Adjv);
+            visited[w->Adjv]=true;
+            count++;
+        }
+        v=w->Adjv;
+    }
+}
+
+//十字链表的深度搜索递归
+void DFS_arc(OLGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    Arcbox w;
+    visit_(v);
+    visited[v]=true;
+
+    for(w=Graph->G[v].firstOut;w;w=w->tlink){
+        if(!visited[w->headvex])//下一个顶点没有被访问
+            DFS_arc(Graph,w->headvex,visit_);
+    }
+}
+
+//十字链表的深度搜索递归
+void In_DFS_arc(OLGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int count=0;
+    Arcbox w;
+    visit_(v);
+    visited[v]=true;
+    count++;
+    /*用一个count计次，一直到count==nv的时候停止，~有连出去的边*/
+    while(count!=Graph->nv){
+        w=Graph->G[v].firstOut;//2
+        if(w){
+            //如果前面有已经访问过的一直滑过
+            while(visited[w->headvex])
+                w=w->tlink;
+            visit_(w->headvex);
+            visited[w->headvex]=true;
+            count++;
+        }
+        v=w->headvex;
+    }
+}
+
+//矩阵的深度搜索非递归
+void In_DFS_matric(MGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int i,count=0;
+    /*用一个count计次，一直到count==nv的时候停止*/
+    while(count!=Graph->nv){
+        visit_(v);
+        visited[v]=true;
+        count++;
+        for(i=0;i<Graph->nv;i++){
+            if(Graph->G[v][i]<INFINITY && visited[i]==false){
+                v=i;//把找到的数字记录下来
+                break;
+            }
+        }
+    }
+}
+
+//矩阵的深度递归搜索
+void DFS_matric(MGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int i;
+    visit_(v);
+    visited[v]=true;
+    for(i=0;i<Graph->nv;i++){
+        if(Graph->G[v][i]<INFINITY && visited[i]==false)
+            DFS_matric(Graph,i,visit_);//一直递归调用
+    }
+}
+
+//判断是不是边
+int IsEdge(MGraph Graph,Vertex v,Vertex w){
+    return Graph->G[v][w]<INFINITY?true:false;
+}
+
+
+void visit_(Vertex s){
+    printf("%d ",s);
+}
+
+//创建空队列
+queue CreatQueue(){
+    queue Q=(queue)malloc((sizeof(struct QNode)));
+    //Q->data=(element *)malloc(maxSize*sizeof(element));//???
+    Q->front=Q->rear=0;
+    //Q->maxSize=maxSize;
+    return Q;
+}
+
+//列队是不是满的
+int Isfull(queue Q){
+    if((Q->rear+1)%maxSize==Q->front)
+        return 1;
+    else
+        return 0;
+}
+
+//添加新队列
+void addQ(queue Q,element1 x){
+    /*printf("\n");
+    printf("rear:%d\n",Q->rear);
+    printf("front:%d\n",Q->front);*/
+    if(Isfull(Q)){
+        printf("列队满");
+        exit(0);
+    }else{
+        Q->rear=(Q->rear+1)%maxSize;
+        Q->data1[Q->rear]=x;
+        //printf("进来一个元素\n");
+    }
+    /*printf("rear:%d\n",Q->rear);
+    printf("front:%d\n",Q->front);
+    printf("本次添加结束\n");
+     printf("\n");*/
+}
+
+//判断队列是否为空
+int isEmpty(queue Q){
+    if(Q->front==Q->rear){
+        //printf("队列空了");
+        return 1;
+    }
+    else{
+        //printf("队列不空");
+        return 0;
+    }
+
+}
+
+//删除队列中的元素,返回弹出的地址
+element1 deleteQ(queue Q){
+    /*printf("\n");
+    printf("rear:%d\n",Q->rear);
+    printf("front:%d\n",Q->front);*/
+    if(isEmpty(Q)){
+        printf("队列空");
+        exit(0);
+    }else{
+    //printf("出去一个元素\n");
+    Q->front=(Q->front+1)%(maxSize);//删掉前的地址
+    return Q->data1[Q->front];//返回的是一个队列里的元素，即一个地址
+    /*printf("\n");
+    printf("rear:%d\n",Q->rear);
+    printf("front:%d\n",Q->front);*/
+    }
+
+}
+
+//建立邻接表的图
+LGraph biuldGraph_adjacencyList(){
+    LGraph Graph;
+    Edge E;
+    int nv,i;
+
+    FILE*fp;
+     if((fp=fopen("E://数据结构//图 实验//matric.txt","r"))==NULL)
+    {
+        printf("fail to open!");
+        exit(0);
+    }
+    fscanf(fp,"%d\n",&nv);//顶点个数
+    Graph=CreateGraph_adjacencyList(nv);//初始化有nv个顶点但没有边的图
+
+    fscanf(fp,"%d\n",&Graph->ne);//读入边数
+    if(Graph->ne!=0){
+        E=(Edge)malloc(sizeof(struct ENode));
+        for(i=0;i<Graph->ne;i++){
+            fscanf(fp,"%d %d %d\n",&E->v1,&E->v2,&E->weight);//读入边的信息
+            InsertEdge_adjacencyList(Graph,E);//把这条边插入矩阵信息中
+        }
+    }
+    //读入顶点的数据
+    for(i=0;i<Graph->nv;i++){
+        fscanf(fp,"%c",&Graph->G[i].data);//读入A、B、C顶点的数据
+    }
+    return Graph;
+}
+
+//初始化有nv个顶点但没有边的图
+LGraph CreateGraph_adjacencyList(int nvNum){
+    Vertex v;
+    LGraph Graph;
+    //为这个图申请空间
+    Graph =(LGraph)malloc(sizeof(struct GNode));
+    Graph->nv=nvNum;
+    //边数设置为0，并且将各条边的间距设置成无穷大，表示不连接
+    Graph->ne=0;
+    for(v=0;v<Graph->nv;v++)
+        Graph->G[v].firstEdge=NULL;
+    return Graph;
+}
+
+//把这条边插入邻接表信息中
+void InsertEdge_adjacencyList(LGraph Graph,Edge E){
+    PtrToAdjvNode newnode;//定义一个表头结点
+    //建立一个v2邻接点
+    newnode=(PtrToAdjvNode)malloc(sizeof(struct AdjvNode));
+    newnode->Adjv=E->v2;
+    newnode->weight=E->weight;
+    //将v2插入v1表头
+    newnode->next=Graph->G[E->v1].firstEdge;
+    Graph->G[E->v1].firstEdge=newnode;
+}
+
+
+//建立十字链表的图
+OLGraph biuldGraph_arc(){
+    OLGraph Graph;
+    Edge E;
+    int nv,i;
+
+    FILE*fp;
+     if((fp=fopen("E://数据结构//图 实验//matric1.txt","r"))==NULL)
+    {
+        printf("fail to open!");
+        exit(0);
+    }
+    fscanf(fp,"%d\n",&nv);//顶点个数
+    Graph=CreateGraph_arc(nv);//初始化有nv个顶点但没有边的图
+
+    fscanf(fp,"%d\n",&Graph->ne);//读入边数
+    if(Graph->ne!=0){
+        E=(Edge)malloc(sizeof(struct ENode));
+        //A=(Arcbox)malloc(sizeof(struct ArcNode));//为结点申请空间
+        for(i=0;i<Graph->ne;i++){
+            fscanf(fp,"%d %d %d\n",&E->v1,&E->v2,&E->weight);//读入边的信息
+            //fscanf(fp,"%d %d %d\n",&A->tailvex,&A->headvex,&A->weight);//读入边的信息
+            InsertEdge_arc(Graph,E);//把这条边插入矩阵信息中
+        }
+    }
+    //读入顶点的数据
+    for(i=0;i<Graph->nv;i++){
+        fscanf(fp,"%c",&Graph->G[i].data);//读入A、B、C顶点的数据
+    }
+    return Graph;
+
+}
+
+//初始化有nv个顶点但没有边的图
+OLGraph CreateGraph_arc(int nvNum){
+    Vertex v;
+    OLGraph Graph;
+    //为这个图申请空间
+    Graph =(OLGraph)malloc(sizeof(struct OLGNode));
+    Graph->nv=nvNum;
+    Graph->ne=0;
+    /*
+    for(v=0;v<Graph->nv;v++)
+        Graph->G[v].firstIn=NULL;
+        Graph->G[v].firstOut=NULL;出错原因！！
+
+    */
+    for(v=0;v<Graph->nv;v++){
+        Graph->G[v].firstIn=NULL;
+        Graph->G[v].firstOut=NULL;
+    }
+    return Graph;
+}
+
+//把这条边插入邻接表信息中
+void InsertEdge_arc(OLGraph Graph,Edge E){
+    Arcbox A;
+    A=(Arcbox)malloc(sizeof(struct ArcNode));//为结点申请空间
+
+    A->weight=E->weight;
+    A->headvex=E->v2;
+    A->tailvex=E->v1;
+
+    A->tlink=Graph->G[A->tailvex].firstOut;//出去的指针解决了
+    Graph->G[A->tailvex].firstOut=A;//把出去的边连接上
+    //解决firstIn,hlink的指针
+    A->hlink=Graph->G[A->headvex].firstIn;
+    Graph->G[A->headvex].firstIn=A;
+}
