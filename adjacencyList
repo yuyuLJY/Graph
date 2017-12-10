@@ -1,0 +1,114 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#define MaxVertexNum 20 //顶点数设置为100
+#define INFINITY 100000
+#define maxSize 100
+#define ERROR -1
+#define MAXK 1e3
+clock_t start,stop;
+double duration;
+typedef enum{false = 0,true = 1}PointTag;
+int visited[MaxVertexNum];
+
+/*------------------------------------邻接表的结构体--------------------------------*/
+/*邻接点的定义*/
+typedef int weightType;
+typedef char dataType;
+struct AdjvNode{
+    Vertex Adjv;//邻接点的下标
+    weightType weight;
+    struct AdjvNode *next;
+};
+typedef struct AdjvNode *PtrToAdjvNode;
+
+
+/*顶点表头结点的定义*/
+struct Vnode{
+    PtrToAdjvNode firstEdge;//边表头指针
+    dataType data;
+};
+//开辟顶点结点的数组
+typedef struct Vnode AdjList[MaxVertexNum];
+
+
+/*邻接表-图的定义*/
+struct GNode_AL{
+    int nv;
+    int ne;
+    AdjList G;//顶点表
+};
+typedef struct GNode_AL *LGraph;
+
+/*------------------------------------邻接表的结构体结束--------------------------------*/
+
+/*---------------------------------下面是创建邻接表函数-----------------------------------------*/
+
+//建立邻接表的图
+LGraph biuldGraph_adjacencyList(){
+    LGraph Graph;
+    Edge E;
+    int nv,i;
+
+    FILE*fp;
+     if((fp=fopen("E://数据结构//图 实验//matric1.txt","r"))==NULL)
+    {
+        printf("fail to open!");
+        exit(0);
+    }
+    fscanf(fp,"%d\n",&nv);//顶点个数
+    Graph=CreateGraph_adjacencyList(nv);//初始化有nv个顶点但没有边的图
+
+    fscanf(fp,"%d\n",&Graph->ne);//读入边数
+    if(Graph->ne!=0){
+        E=(Edge)malloc(sizeof(struct ENode));
+        for(i=0;i<Graph->ne;i++){
+            fscanf(fp,"%d %d %d\n",&E->v1,&E->v2,&E->weight);//读入边的信息
+            InsertEdge_adjacencyList(Graph,E);//把这条边插入矩阵信息中
+        }
+    }
+    //读入顶点的数据
+    for(i=0;i<Graph->nv;i++){
+        fscanf(fp,"%c",&Graph->G[i].data);//读入A、B、C顶点的数据
+    }
+    return Graph;
+}
+
+//初始化有nv个顶点但没有边的图
+LGraph CreateGraph_adjacencyList(int nvNum){
+    Vertex v;
+    LGraph Graph;
+    //为这个图申请空间
+    Graph =(LGraph)malloc(sizeof(struct GNode));
+    Graph->nv=nvNum;
+    Graph->ne=0;
+    for(v=0;v<Graph->nv;v++)
+        Graph->G[v].firstEdge=NULL;
+    return Graph;
+}
+
+//把这条边插入邻接表信息中
+void InsertEdge_adjacencyList(LGraph Graph,Edge E){
+    PtrToAdjvNode newnode;//定义一个表头结点
+    //建立一个v2邻接点
+    newnode=(PtrToAdjvNode)malloc(sizeof(struct AdjvNode));
+    newnode->Adjv=E->v2;
+    newnode->weight=E->weight;
+    //将v2插入v1表头
+    newnode->next=Graph->G[E->v1].firstEdge;
+    Graph->G[E->v1].firstEdge=newnode;
+}
+
+/*---------------------------------创建邻接表函数结束-----------------------------------------*/
+
+
+
+
+
+
+
+
+
+
+
+
