@@ -1,0 +1,88 @@
+一、邻接矩阵
+1、递归
+有限制条件，如果不是连通图，那么找不完，必须要用for遍历每个顶点
+思想：从指定的v顶点出发，访问他，标记为已经访问。然后，寻找跟这个v顶点连接的每一条边（for循环），如果满足有边+未被访问，则递归调用
+```
+//矩阵的深度递归搜索
+void DFS_matric(MGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    int i;
+    visit_(v);
+    visited[v]=true;
+    for(i=0;i<Graph->nv;i++){
+            //跟这个顶点有边并且还没有被访问
+        if(Graph->G[v][i]<INFINITY && visited[i]==false)
+            DFS_matric(Graph,i,visit_);//一直递归调用
+    }
+}
+```
+2、非递归
+
+```
+//后边才补上来，现在写的有些问题
+```
+
+```
+这里写代码片
+```
+
+二、邻接表
+1、递归
+从给定的v顶点去访问，如何找跟他连接的顶点？这个时候先找到他的那一行边表，再找到头指针指向的位置，w的类型使指针PtrToAdjvNode类型。如果第一个被访问了，就再找w的下一个，最多可以一直找到尾巴，就是w变成NULL。（可以结合前面的邻接表的创建文章来看）
+```
+w=Graph->G[v].firstEdge;
+```
+```
+//邻接表的深度搜索递归
+void DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    PtrToAdjvNode w;
+    visit_(v);
+    visited[v]=true;
+
+    for(w=Graph->G[v].firstEdge;w;w=w->next){
+        if(!visited[w->Adjv])//下一个顶点没有被访问
+            DFS_adjacencyList(Graph,w->Adjv,visit_);
+    }
+}
+```
+
+2、非递归
+这里演示一个不是连通图的该怎么遍历。
+非递归需要使用队列。规则：凡是访问过的，都加进队列，深度走不下去了，就删除一个元素出来用。
+A、对每一个顶点用for遍历。判断是否访问，如果没有访问，则访问他，并且标记，再加进队列里。
+B、再判断队列是否为空，如果不空，（开始深度循环地寻找）就开始按着刚才访问的元素切入。找到这个元素的边表的指向的元素，一个一个找，如果标记过就下一个，没有标记过，就访问这个元素，加入队列。再把寻找重心放到这个找到的元素，找他的边表，一直重复。
+C、直到某个边表到尾了，跳出深度搜索的while。这时，删除一个元素，把重心放到这个元素，寻找他的边表行，
+D、一直到所有元素都访问了。
+
+```
+//邻接表的深度搜索非递归
+void In_DFS_adjacencyList(LGraph Graph,Vertex v,void(*visit_)(Vertex)){
+    PtrToAdjvNode p;
+    queue Q;
+    Q=CreatQueue();
+    int i;
+    for(i=0;i<Graph->nv;i++){
+        if(!visited[i]){//如果未访问，则访问
+        visit_(i);
+        visited[i]=true;
+        addQ(Q,i);
+        p=Graph->G[i].firstEdge;
+        while(!isEmpty(Q)){
+            while(p){
+                    //如果没有被访问
+                if(!visited[p->Adjv]){
+                    visited[p->Adjv]=true;
+                    visit_(p->Adjv);
+                    addQ(Q,p->Adjv);
+                    //如果能找到这个结点，就走这条路，掉头
+                    p=Graph->G[p->Adjv].firstEdge;
+                }else{
+                    p=p->next;
+                }
+            }
+            v=deleteQ(Q);
+            p=Graph->G[v].firstEdge;
+        }
+        }
+    }
+}
+```
