@@ -1,0 +1,88 @@
+#define ERROR -1
+#define MAXK 1e3
+clock_t start,stop;
+double duration;
+typedef enum{false = 0,true = 1}PointTag;
+int visited[MaxVertexNum];
+typedef int weightType;
+typedef char dataType;
+
+//邻接矩阵的结构体
+/*邻接矩阵*/
+struct GNode{
+    int nv;//顶点数
+    int ne;//边数
+    weightType G[MaxVertexNum][MaxVertexNum];//邻接矩阵某条边的权值
+    dataType data[MaxVertexNum];//存顶点的数据
+};
+typedef struct GNode *MGraph;
+
+/*邻接矩阵边的定义*/
+typedef int Vertex;
+struct ENode{
+    Vertex v1,v2;
+    weightType weight;
+};
+typedef struct ENode *Edge;
+
+/*-------------------------------main---------------------------*/
+int main()
+{
+    MGraph Graph1;
+    Graph1=biuldGraph_matric();
+    return 0;
+}
+
+
+/*-------------------------------下面是函数-------------------*/
+MGraph biuldGraph_matric(){
+    MGraph Graph;
+    Edge E;
+    int nv,i;
+    //读入顶点个数
+    FILE*fp;
+     if((fp=fopen("E://数据结构//图 实验//matric1.txt","r"))==NULL)
+    {
+        printf("fail to open!");
+        exit(0);
+    }
+    fscanf(fp,"%d\n",&nv);//顶点个数
+    Graph=CreateGraph_matric(nv);//初始化有nv个顶点但没有边的图
+
+    fscanf(fp,"%d\n",&Graph->ne);//读入边数
+    if(Graph->ne!=0){
+        E=(Edge)malloc(sizeof(struct ENode));
+        for(i=0;i<Graph->ne;i++){
+            fscanf(fp,"%d %d %d\n",&E->v1,&E->v2,&E->weight);//读入边的信息
+            InsertEdge_matric(Graph,E);//把这条边插入矩阵信息中
+        }
+    }
+    //读入顶点的数据
+    for(i=0;i<Graph->nv;i++){
+        fscanf(fp,"%c",&Graph->data[i]);//读入A、B、C顶点的数据
+    }
+    return Graph;
+}
+
+//初始化有nv个顶点但没有边的图
+MGraph CreateGraph_matric(int nvNum){
+    Vertex v,w;
+    MGraph Graph;
+    //为这个图申请空间
+    Graph =(MGraph)malloc(sizeof(struct GNode));
+    Graph->nv=nvNum;
+    //边数设置为0，并且将各条边的间距设置成无穷大，表示不连接
+    Graph->ne=0;
+    for(v=0;v<Graph->nv;v++){
+        for(w=0;w<Graph->nv;w++){
+            Graph->G[v][w]=INFINITY;
+        }
+
+    }
+    return Graph;
+}
+
+//在矩阵中插入边
+void InsertEdge_matric(MGraph Graph,Edge E){
+    Graph->G[E->v1][E->v2]=E->weight;
+}
